@@ -1,0 +1,76 @@
+import numpy as np
+from scipy.optimize import curve_fit, fsolve
+import matplotlib.pyplot as plt
+
+x_data = np.array([152, 159, 164, 171, 176, 180, 189])
+y_data = np.array([2300, 2000, 1700, 1500, 1300, 1200, 1000])
+
+
+def func_y_from_x(x, a, b):
+    return a + b * np.log(x)
+
+
+popt_y_from_x, _ = curve_fit(func_y_from_x, x_data, y_data)
+
+
+a, b = popt_y_from_x
+
+
+print(f"Parameters for y from x: a = {a:.2f}, b = {b:.2f}")
+
+
+residuals_y_from_x = y_data - func_y_from_x(x_data, a, b)
+ss_res_y_from_x = np.sum(residuals_y_from_x**2)
+ss_tot_y_from_x = np.sum((y_data - np.mean(y_data))**2)
+r_squared_y_from_x = 1 - (ss_res_y_from_x / ss_tot_y_from_x)
+
+print(f"R-squared for y from x: {r_squared_y_from_x:.4f}")
+
+
+def predict_y(x):
+    return a + b * np.log(x)
+
+def predict_x(y):
+    def equation(x):
+        return func_y_from_x(x, a, b) - y 
+    return fsolve(equation, x_data.mean())[0]
+
+
+while True:
+    try:
+        choice = input("Predict 'x' or 'y'? (Enter 'x' or 'y'): ").lower()
+        if choice not in ('x', 'y'):
+            raise ValueError("Invalid choice. Please enter 'x' or 'y'.")
+
+        if choice == 'y':
+            user_x = float(input("Enter a value for x: "))
+            if user_x <= 0:
+                raise ValueError("x must be greater than 0 for a logarithmic model.")
+            predicted_value = predict_y(user_x)
+        else:  
+            user_y = float(input("Enter a value for y: "))
+            predicted_value = predict_x(user_y)
+
+        break  
+    except ValueError as e:
+        print(f"Invalid input: {e}")
+
+
+print(f"The logarithmic model for y from x is: y = {a:.2f} + {b:.2f} * ln(x)")
+print(f"For the given input, the predicted {choice} is: {predicted_value:.2f}")
+
+
+plt.figure(figsize=(8, 5))
+plt.scatter(x_data, y_data, label='Data')
+plt.plot(x_data, func_y_from_x(x_data, a, b), 'r-', label='y from x')
+if choice == 'y':
+    plt.scatter(user_x, predicted_value, color='green', marker='o', s=100, label='Predicted Point') 
+else: 
+    plt.scatter(predicted_value, user_y, color='green', marker='o', s=100, label='Predicted Point')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.title('Logarithmic Fit (y from x)')
+plt.legend()
+
+plt.tight_layout()
+plt.show()
